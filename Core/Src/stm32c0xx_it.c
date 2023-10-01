@@ -23,6 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "Variables.h"
+#include "button.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -44,8 +45,13 @@
 /* USER CODE BEGIN PV */
 int counterButton = 0;
 extern uint32_t adc_buffer[];
-uint32_t 	media=0,
-			timer1Sec=0;
+uint32_t 	media		= 0,
+			timer1Sec	= 0,
+			fastTick 	= 0,
+			ultraTick 	= 0,
+			slowTick 	= 0,
+			flashTick   = 0,
+			timeoutTick = 0;
 //extern float voltage;
 
 float voltage =0;
@@ -156,9 +162,12 @@ void EXTI4_15_IRQHandler(void)
   /* USER CODE BEGIN EXTI4_15_IRQn 0 */
 
   /* USER CODE END EXTI4_15_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(LEFT_Pin);
+  HAL_GPIO_EXTI_IRQHandler(RIGHT_Pin);
   HAL_GPIO_EXTI_IRQHandler(BTN_BLUE_Pin);
   /* USER CODE BEGIN EXTI4_15_IRQn 1 */
 
+  //counterButton+=1;
   /* USER CODE END EXTI4_15_IRQn 1 */
 }
 
@@ -187,6 +196,48 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
   HAL_TIM_IRQHandler(&htim1);
   /* USER CODE BEGIN TIM1_BRK_UP_TRG_COM_IRQn 1 */
   HAL_GPIO_TogglePin(GPIOA, LD4_GREEN_Pin);
+  if(Channel_0.debounce > 0)
+  {
+	  Channel_0.debounce++;
+	  if (Channel_0.debounce > Channel_0.debounce_target)
+	      {
+
+	     	 Channel_0.current_state = HAL_GPIO_ReadPin(GPIOA, RIGHT_Pin);
+
+	     	 if (Channel_0.last_state == Channel_0.current_state)
+	     	 {
+
+	                 Channel_0.last_state = Channel_0.current_state;
+	                 Channel_0.count++;
+	                 Channel_0.debounce = 0;
+	                 //gpio_isr_handler_add(BTN_CONFIG, ISR_Read_Inputs, (void *)Channel_0.id);
+	          }
+
+	       }
+
+
+  }
+  if(Channel_1.debounce > 0)
+    {
+  	  Channel_1.debounce++;
+  	  if (Channel_1.debounce > Channel_1.debounce_target)
+  	      {
+
+  	     	 Channel_1.current_state = HAL_GPIO_ReadPin(GPIOA, LEFT_Pin);
+
+  	     	 if (Channel_1.last_state == Channel_1.current_state)
+  	     	 {
+
+  	                 Channel_1.last_state = Channel_1.current_state;
+  	                 Channel_1.count++;
+  	                 Channel_1.debounce = 0;
+  	                 //gpio_isr_handler_add(BTN_CONFIG, ISR_Read_Inputs, (void *)Channel_0.id);
+  	          }
+
+  	       }
+
+
+    }
   /* USER CODE END TIM1_BRK_UP_TRG_COM_IRQn 1 */
 }
 
@@ -201,5 +252,18 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 	media=0;
 	//voltage = (adc_buffer[0] / 4095.0) * 3.3;
 
+}
+void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
+{
+	if(GPIO_Pin == Channel_0.pin)
+	{
+		Channel_0.last_state =LOW;
+		Channel_0.debounce = 1;
+	}
+	else if(GPIO_Pin == Channel_1.pin)
+		{
+			Channel_1.last_state =LOW;
+			Channel_1.debounce = 1;
+		}
 }
 /* USER CODE END 1 */

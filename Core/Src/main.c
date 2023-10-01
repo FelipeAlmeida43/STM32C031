@@ -23,6 +23,9 @@
 /* USER CODE BEGIN Includes */
 #include "stm32c031xx.h"
 #include "stm32c0xx_hal.h"
+#include "button.h"
+#include "led.h"
+#include <stdio.h>
 //#include "Variables.h"
 /* USER CODE END Includes */
 
@@ -45,11 +48,25 @@
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 
+I2C_HandleTypeDef hi2c1;
+
 TIM_HandleTypeDef htim1;
 
 /* USER CODE BEGIN PV */
+// Endereço base dos registradores de GPIO
+#define GPIO_BASE_ADDRESS 0x40020000 // Substitua pelo endereço correto do GPIO no seu microcontrolador
+//#define GPIO_BASE_ADDRESS (IOPORT_BASE + 0x00000400UL) // Substitua pelo endereço correto do GPIO no seu microcontrolador
+
+// Registradores de controle de GPIO
+volatile uint32_t *GPIO_DATA = (uint32_t *)(GPIO_BASE_ADDRESS + 0x00); // Registrador de dados
+volatile uint32_t *GPIO_DIR = (uint32_t *)(GPIO_BASE_ADDRESS + 0x04);  // Registrador de direção (0 para entrada, 1 para saída)
+
 extern uint32_t adc_buffer[];
 extern int counterButton;
+char *dia[] ={"Domingo","Segunda","Terca","Quarta","Quinta","Sexta","Sabado",0};
+char **ptr_dia = dia;
+struct DigitalChannels Channel_0 = { RIGHT_Pin, 0, 0, 8, HIGH, HIGH, (void*)ID_0 };
+struct DigitalChannels Channel_1 = { LEFT_Pin , 0, 0, 8, HIGH, HIGH, (void*)ID_1 };
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -58,6 +75,7 @@ static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM1_Init(void);
+static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -118,6 +136,7 @@ int main(void)
   MX_DMA_Init();
   MX_ADC1_Init();
   MX_TIM1_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim1);
 
@@ -129,6 +148,8 @@ int main(void)
  // LL_DMA_Init(&hdma_adc1);
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc_buffer, 10);
   HAL_ADC_Start_IT(&hadc1);
+  led_init();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -136,24 +157,43 @@ int main(void)
   while (1)
   {
 	  HAL_ADC_Start_IT(&hadc1);
+
+	 /* while(*ptr_dia)
+	  {
+		  printf("%s\r",*ptr_dia);
+		  ptr_dia++;
+	  }*/
+	  if(Channel_0.count!=0)
+	  {
+		  Channel_0.count =0;
+		  counterButton++;
+		  ptr_dia++;
+	  }
+	  if(Channel_1.count!=0)
+	  {
+		  Channel_1.count =0;
+		  if(counterButton >0)counterButton--;
+		  ptr_dia--;
+	  }
 	  switch(counterButton)
 	  {
-	  	  case 1: HAL_GPIO_WritePin(GPIOB, LED_R_Pin, SET);
-	  	  	  	  HAL_GPIO_WritePin(GPIOB, LED_B_Pin, RESET);
-	  	  	  	  HAL_GPIO_WritePin(GPIOB, LED_G_Pin, RESET);
+	  	  case 1: led_setON(LED_GREEN);
+	  	  	  	  led_setOFF(LED_RED);
+	  	  	  	  led_setOFF(LED_YELLOW);
 	  	  	  	  break;
-	  	  case 2: HAL_GPIO_WritePin(GPIOB, LED_G_Pin, SET);
-	  	  	  	  HAL_GPIO_WritePin(GPIOB, LED_R_Pin, RESET);
-	  		  	  HAL_GPIO_WritePin(GPIOB, LED_G_Pin, RESET);
+	  	  case 2: led_setON(LED_RED);
+	  	  	  	  led_setOFF(LED_YELLOW);
+	  	  	  	  led_setOFF(LED_GREEN);
+
 	  		  	  break;
-	  	  case 3: HAL_GPIO_WritePin(GPIOB, LED_B_Pin, SET);
-	  	  	  	  HAL_GPIO_WritePin(GPIOB, LED_R_Pin, RESET);
-	  		  	  HAL_GPIO_WritePin(GPIOB, LED_G_Pin, RESET);
-	  	  	  	  counterButton =0;
+	  	  case 3: led_setON(LED_YELLOW);
+	  	  	  	  led_setOFF(LED_RED);
+	  		  	  led_setOFF(LED_GREEN);
 	  		  	  break;
 	  	  default: break;
 
 	  }
+	  led_update();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -257,6 +297,54 @@ static void MX_ADC1_Init(void)
 }
 
 /**
+  * @brief I2C1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2C1_Init(void)
+{
+
+  /* USER CODE BEGIN I2C1_Init 0 */
+
+  /* USER CODE END I2C1_Init 0 */
+
+  /* USER CODE BEGIN I2C1_Init 1 */
+
+  /* USER CODE END I2C1_Init 1 */
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.Timing = 0x20303E5D;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Analogue filter
+  */
+  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Digital filter
+  */
+  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C1_Init 2 */
+
+  /* USER CODE END I2C1_Init 2 */
+
+}
+
+/**
   * @brief TIM1 Initialization Function
   * @param None
   * @retval None
@@ -275,9 +363,9 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 6399;
+  htim1.Init.Prescaler = 1399;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 1000;
+  htim1.Init.Period = 399;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -354,6 +442,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LD4_GREEN_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : LEFT_Pin RIGHT_Pin */
+  GPIO_InitStruct.Pin = LEFT_Pin|RIGHT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LED_R_Pin LED_B_Pin LED_G_Pin */
   GPIO_InitStruct.Pin = LED_R_Pin|LED_B_Pin|LED_G_Pin;
