@@ -195,11 +195,15 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
   /* USER CODE END TIM1_BRK_UP_TRG_COM_IRQn 0 */
   HAL_TIM_IRQHandler(&htim1);
   /* USER CODE BEGIN TIM1_BRK_UP_TRG_COM_IRQn 1 */
-  HAL_GPIO_TogglePin(GPIOA, LD4_GREEN_Pin);
+  timer1Sec++;
+  if(timer1Sec>=100){
+	  HAL_GPIO_TogglePin(GPIOA, LD4_GREEN_Pin);
+	  timer1Sec =0;
+  }
   if(Channel_0.debounce > 0)
   {
 	  Channel_0.debounce++;
-	  if (Channel_0.debounce > Channel_0.debounce_target)
+	  if (Channel_0.debounce >= Channel_0.debounce_target)
 	      {
 
 	     	 Channel_0.current_state = HAL_GPIO_ReadPin(GPIOA, RIGHT_Pin);
@@ -210,7 +214,7 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 	                 Channel_0.last_state = Channel_0.current_state;
 	                 Channel_0.count++;
 	                 Channel_0.debounce = 0;
-	                 //gpio_isr_handler_add(BTN_CONFIG, ISR_Read_Inputs, (void *)Channel_0.id);
+
 	          }
 
 	       }
@@ -220,7 +224,7 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
   if(Channel_1.debounce > 0)
     {
   	  Channel_1.debounce++;
-  	  if (Channel_1.debounce > Channel_1.debounce_target)
+  	  if (Channel_1.debounce >= Channel_1.debounce_target)
   	      {
 
   	     	 Channel_1.current_state = HAL_GPIO_ReadPin(GPIOA, LEFT_Pin);
@@ -231,7 +235,7 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
   	                 Channel_1.last_state = Channel_1.current_state;
   	                 Channel_1.count++;
   	                 Channel_1.debounce = 0;
-  	                 //gpio_isr_handler_add(BTN_CONFIG, ISR_Read_Inputs, (void *)Channel_0.id);
+
   	          }
 
   	       }

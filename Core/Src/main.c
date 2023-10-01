@@ -36,7 +36,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define DEBOUNCE	5
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -53,20 +53,12 @@ I2C_HandleTypeDef hi2c1;
 TIM_HandleTypeDef htim1;
 
 /* USER CODE BEGIN PV */
-// Endereço base dos registradores de GPIO
-#define GPIO_BASE_ADDRESS 0x40020000 // Substitua pelo endereço correto do GPIO no seu microcontrolador
-//#define GPIO_BASE_ADDRESS (IOPORT_BASE + 0x00000400UL) // Substitua pelo endereço correto do GPIO no seu microcontrolador
-
-// Registradores de controle de GPIO
-volatile uint32_t *GPIO_DATA = (uint32_t *)(GPIO_BASE_ADDRESS + 0x00); // Registrador de dados
-volatile uint32_t *GPIO_DIR = (uint32_t *)(GPIO_BASE_ADDRESS + 0x04);  // Registrador de direção (0 para entrada, 1 para saída)
-
 extern uint32_t adc_buffer[];
 extern int counterButton;
 char *dia[] ={"Domingo","Segunda","Terca","Quarta","Quinta","Sexta","Sabado",0};
 char **ptr_dia = dia;
-struct DigitalChannels Channel_0 = { RIGHT_Pin, 0, 0, 8, HIGH, HIGH, (void*)ID_0 };
-struct DigitalChannels Channel_1 = { LEFT_Pin , 0, 0, 8, HIGH, HIGH, (void*)ID_1 };
+struct DigitalChannels Channel_0 = { RIGHT_Pin, 0, 0, DEBOUNCE, HIGH, HIGH, (void*)ID_0 };
+struct DigitalChannels Channel_1 = { LEFT_Pin , 0, 0, DEBOUNCE, HIGH, HIGH, (void*)ID_1 };
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -118,7 +110,7 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+   HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -190,6 +182,8 @@ int main(void)
 	  	  	  	  led_setOFF(LED_RED);
 	  		  	  led_setOFF(LED_GREEN);
 	  		  	  break;
+	  	  case 4: counterButton =0;
+	  	  	  	  break;
 	  	  default: break;
 
 	  }
@@ -365,7 +359,7 @@ static void MX_TIM1_Init(void)
   htim1.Instance = TIM1;
   htim1.Init.Prescaler = 1399;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 399;
+  htim1.Init.Period = 99;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
