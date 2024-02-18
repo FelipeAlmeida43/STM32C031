@@ -80,7 +80,7 @@ void UART_TransmitInteger(int value) {
     char buffer[100];  // Adjust the buffer size as needed for your integer size
 
     // Convert integer to string
-    snprintf(buffer, sizeof(buffer), "VOLTS %d\r\n", value);
+    snprintf(buffer, sizeof(buffer), "%d\r\n", value);
 
     // Transmit the string over UART
     UART_TransmitString(buffer);
