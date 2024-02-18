@@ -1,0 +1,11 @@
+../Core/Src/led.c:58:6:setGpio	24	static
+../Core/Src/led.c:64:6:led_init	16	static
+../Core/Src/led.c:74:6:led_update	16	static
+../Core/Src/led.c:316:6:led_setON	16	static
+../Core/Src/led.c:323:6:led_setOFF	16	static
+../Core/Src/led.c:330:6:led_setSLOW	16	static
+../Core/Src/led.c:338:6:led_setFAST	16	static
+../Core/Src/led.c:345:6:led_setSLOWalt	16	static
+../Core/Src/led.c:352:6:led_setFASTalt	16	static
+../Core/Src/led.c:359:6:led_setULTRA	16	static
+../Core/Src/led.c:366:6:led_setFLASH	16	static
